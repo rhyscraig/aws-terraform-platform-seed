@@ -24,24 +24,32 @@ member_role_path_prefix = "/"
 github_approver_teams = ["platform-engineers"]
 
 # Subjects for the GitHub Actions OIDC trust policy.
-# Format: repo:<github-org>/<repo>:environment:<tfvars-filename>
+# Format: repo:<github-org>/<repo>:ref:<ref> OR repo:<github-org>/<repo>:environment:<env-name>
 # The bootstrap script derives these automatically — keep in sync here for Terraform.
 github_oidc_subjects = [
   # Seed pipeline (self)
-  "repo:rhyscraig/aws-terraform-platform-seed:ref:refs/heads/master",
+  "repo:rhyscraig/aws-terraform-platform-seed:ref:refs/heads/main",
   "repo:rhyscraig/aws-terraform-platform-seed:environment:myorg",
-  # Platform accounts AVM
+
+  # Platform - Accounts AVM
   "repo:rhyscraig/aws-terraform-platform-aws-accounts:ref:refs/heads/main",
-  "repo:rhyscraig/aws-terraform-platform-aws-accounts:environment:production",
-  # Platform baselines
+  "repo:rhyscraig/aws-terraform-platform-aws-accounts:environment:myorg",
+
+  # Platform - Baselines
   "repo:rhyscraig/aws-terraform-platform-aws-baselines:ref:refs/heads/main",
-  "repo:rhyscraig/aws-terraform-platform-aws-baselines:environment:production",
-  # Platform org
+  "repo:rhyscraig/aws-terraform-platform-aws-baselines:environment:myorg",
+
+  # Platform - Organization
   "repo:rhyscraig/aws-terraform-platform-aws-org:ref:refs/heads/main",
-  "repo:rhyscraig/aws-terraform-platform-aws-org:environment:prod",
-  # TerrorGems infrastructure
+  "repo:rhyscraig/aws-terraform-platform-aws-org:environment:myorg",
+
+  # Solutions - TerrorGems
   "repo:rhyscraig/aws-terraform-solutions-terrorgem:ref:refs/heads/main",
-  "repo:rhyscraig/aws-terraform-solutions-terrorgem:environment:prod"
+  "repo:rhyscraig/aws-terraform-solutions-terrorgem:environment:myorg",
+
+  # Solutions - Website
+  "repo:rhyscraig/website-static-html-craighoad.com:ref:refs/heads/main",
+  "repo:rhyscraig/website-static-html-craighoad.com:environment:myorg"
 ]
 
 ############################################

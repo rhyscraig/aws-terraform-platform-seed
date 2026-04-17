@@ -120,3 +120,13 @@ variable "organization_id" {
   description = "The org id"
   type        = string
 }
+
+########################################
+# CROSS-ACCOUNT STATE BUCKET ACCESS
+########################################
+
+variable "craighoad_oidc_role_arn" {
+  description = "ARN of the OIDC role in craighoad.com production account (for cross-account state bucket write access). Leave empty to skip cross-account policy."
+  type        = string
+  default     = ""
+}

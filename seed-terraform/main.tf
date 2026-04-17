@@ -458,6 +458,41 @@ module "logs_bucket" {
 }
 
 ############################################
+# S3 BUCKET POLICY — CROSS-ACCOUNT ACCESS
+# Allows craighoad.com production account to write state to a dedicated prefix
+############################################
+
+data "aws_iam_policy_document" "state_bucket_cross_account_policy" {
+  count = var.craighoad_oidc_role_arn != "" ? 1 : 0
+
+  statement {
+    sid    = "AllowCraighoaComProductionAccountStateWrite"
+    effect = "Allow"
+    principals {
+      type        = "AWS"
+      identifiers = [var.craighoad_oidc_role_arn]
+    }
+    actions = [
+      "s3:PutObject",
+      "s3:GetObject",
+      "s3:DeleteObject",
+      "s3:ListBucket"
+    ]
+    resources = [
+      module.state_bucket[0].s3_bucket_arn,
+      "${module.state_bucket[0].s3_bucket_arn}/hcp/prd/craighoad-website/*"
+    ]
+  }
+}
+
+resource "aws_s3_bucket_policy" "state_bucket_cross_account" {
+  count      = var.craighoad_oidc_role_arn != "" ? 1 : 0
+  bucket     = module.state_bucket[0].s3_bucket_id
+  policy     = data.aws_iam_policy_document.state_bucket_cross_account_policy[0].json
+  depends_on = [module.state_bucket[0]]
+}
+
+############################################
 # STACKSET
 ############################################
 
