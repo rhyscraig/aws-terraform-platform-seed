@@ -1,14 +1,14 @@
 # Org Details
 org             = "hcp"
 partition       = "aws"
-aws_region      = "eu-west-2"
+aws_region      = "eu-west-1"
 environment     = "prd"
 system          = "platform"
 organization_id = "o-9c67661145"
 
 # Guardrails — plan fails if credentials target the wrong account or region
 expected_account_id = "395101865577"
-expected_region     = "eu-west-2"
+expected_region     = "eu-west-1"
 
 ############################################
 # IAM
