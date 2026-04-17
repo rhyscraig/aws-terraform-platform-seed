@@ -130,3 +130,51 @@ variable "craighoad_oidc_role_arn" {
   type        = string
   default     = ""
 }
+
+########################################
+# ACCOUNT CREATION
+########################################
+
+variable "create_craighoad_account" {
+  description = "Whether to create the craighoad.com production account. Set to true to create/manage the account via Terraform."
+  type        = bool
+  default     = false
+}
+
+variable "craighoad_account_email" {
+  description = "Email address for the craighoad.com production account"
+  type        = string
+  default     = ""
+}
+
+variable "craighoad_account_name" {
+  description = "Name for the craighoad.com production account"
+  type        = string
+  default     = "craighoad-com-production"
+}
+
+variable "craighoad_parent_ou_id" {
+  description = "Parent OU ID for craighoad.com production account (workloads_prod_ou by default)"
+  type        = string
+  default     = ""
+}
+
+########################################
+# AWS SSO CONFIGURATION
+########################################
+
+variable "sso_principal_id" {
+  description = "AWS SSO principal ID (user or group) to assign to permission sets. Get from AWS Identity Center"
+  type        = string
+  default     = ""
+}
+
+variable "sso_principal_type" {
+  description = "AWS SSO principal type: USER or GROUP"
+  type        = string
+  default     = "USER"
+  validation {
+    condition     = contains(["USER", "GROUP"], var.sso_principal_type)
+    error_message = "sso_principal_type must be 'USER' or 'GROUP'"
+  }
+}

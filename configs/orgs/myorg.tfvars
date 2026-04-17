@@ -66,6 +66,25 @@ target_organizational_unit_ids = [
 ]
 
 ############################################
+# ACCOUNT CREATION
+############################################
+
+# Create craighoad.com production account
+create_craighoad_account = true
+craighoad_account_email  = "craighoad+craighoad-com@hotmail.com"
+craighoad_account_name   = "craighoad-com-production"
+craighoad_parent_ou_id   = "ou-9c67-t2p4n6m8" # workloads_prod_ou
+
+############################################
+# AWS SSO PERMISSION SETS
+############################################
+
+# Get your SSO principal ID from AWS Identity Center > Users or Groups > copy the ID
+# This is your user or group ID in AWS SSO that will be assigned admin access to new accounts
+sso_principal_id   = "00000000-0000-0000-0000-000000000000"  # CHANGE THIS: Your AWS SSO user/group ID
+sso_principal_type = "USER"
+
+############################################
 # TAGGING
 ############################################
 

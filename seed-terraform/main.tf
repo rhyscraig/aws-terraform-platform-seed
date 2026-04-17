@@ -493,6 +493,37 @@ resource "aws_s3_bucket_policy" "state_bucket_cross_account" {
 }
 
 ############################################
+# AWS SSO - PERMISSION SETS
+############################################
+
+data "aws_ssoadmin_instances" "current" {}
+
+resource "aws_ssoadmin_permission_set" "admin" {
+  name             = "${local.name_prefix}-admin"
+  instance_arn     = data.aws_ssoadmin_instances.current.arns[0]
+  session_duration = "PT8H"
+  description      = "Admin access for ${local.name_prefix} platform"
+}
+
+resource "aws_ssoadmin_managed_policy_attachment" "admin_policy" {
+  instance_arn       = data.aws_ssoadmin_instances.current.arns[0]
+  permission_set_arn = aws_ssoadmin_permission_set.admin.arn
+  managed_policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+}
+
+resource "aws_ssoadmin_account_assignment" "craighoad_admin" {
+  count              = var.create_craighoad_account ? 1 : 0
+  instance_arn       = data.aws_ssoadmin_instances.current.arns[0]
+  permission_set_arn = aws_ssoadmin_permission_set.admin.arn
+  principal_id       = var.sso_principal_id
+  principal_type     = var.sso_principal_type
+  target_id          = aws_organizations_account.craighoad_production[0].id
+  target_type        = "AWS_ACCOUNT"
+
+  depends_on = [aws_ssoadmin_managed_policy_attachment.admin_policy]
+}
+
+############################################
 # STACKSET
 ############################################
 
