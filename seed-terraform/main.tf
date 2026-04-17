@@ -46,7 +46,8 @@ resource "null_resource" "validate_region" {
 ############################################
 
 module "oidc_provider" {
-  source = "git::https://github.com/BT-IT-Infrastructure-CloudOps/aws-terraform-module-iam.git//modules/iam-oidc-provider?ref=f902bb6de3b6938de895f840815882a544e15a1f"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-github-oidc-provider"
+  version = "~> 5.0"
 
   tags = local.tags
 }
@@ -58,7 +59,8 @@ module "oidc_provider" {
 ############################################
 
 module "assume_member_roles_policy" {
-  source = "git::https://github.com/BT-IT-Infrastructure-CloudOps/aws-terraform-module-iam.git//modules/iam-policy?ref=f902bb6de3b6938de895f840815882a544e15a1f"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
+  version = "~> 5.0"
 
   name        = "${local.name_prefix}-assume-member-roles"
   description = "Allow assume member roles"
@@ -98,7 +100,8 @@ module "assume_member_roles_policy" {
 ############################################
 
 module "seed_oidc_policy" {
-  source = "git::https://github.com/BT-IT-Infrastructure-CloudOps/aws-terraform-module-iam.git//modules/iam-policy?ref=f902bb6de3b6938de895f840815882a544e15a1f"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
+  version = "~> 5.0"
 
   name        = "${local.name_prefix}-seed-infra"
   description = "Permissions for the seed pipeline to manage IAM, S3, KMS, CloudFormation, and Organizations resources"
@@ -145,7 +148,8 @@ module "seed_oidc_policy" {
 ############################################
 
 module "workloads_oidc_policy" {
-  source = "git::https://github.com/BT-IT-Infrastructure-CloudOps/aws-terraform-module-iam.git//modules/iam-policy?ref=f902bb6de3b6938de895f840815882a544e15a1f"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-policy"
+  version = "~> 5.0"
 
   name        = "${local.name_prefix}-workloads"
   description = "AWS service permissions for workload pipelines authenticating via the ${local.name_prefix} OIDC role"
@@ -271,15 +275,14 @@ module "workloads_oidc_policy" {
 # IAM - WORKLOADS OIDC ROLE
 ############################################
 module "workloads_oidc_role" {
-  source = "git::https://github.com/BT-IT-Infrastructure-CloudOps/aws-terraform-module-iam.git//modules/iam-role?ref=f902bb6de3b6938de895f840815882a544e15a1f"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-github-oidc-role"
+  version = "~> 5.0"
 
   depends_on = [module.oidc_provider]
 
-  name            = "${local.name_prefix}-oidc-role"
-  use_name_prefix = false
+  name = "${local.name_prefix}-oidc-role"
 
-  enable_github_oidc = true
-  oidc_subjects      = var.github_oidc_subjects
+  subjects = var.github_oidc_subjects
 
   policies = {
     AssumeMemberRoles = module.assume_member_roles_policy.arn
@@ -295,7 +298,8 @@ module "workloads_oidc_role" {
 ############################################
 
 module "kms_key" {
-  source = "git::https://github.com/BT-IT-Infrastructure-CloudOps/aws-terraform-module-kms.git?ref=b7b2ad72c1111679abfdb9b3df2213a8c16b9727"
+  source  = "terraform-aws-modules/kms/aws"
+  version = "~> 2.0"
 
   description             = "${local.name_prefix}-tfstate"
   deletion_window_in_days = 7
@@ -303,9 +307,6 @@ module "kms_key" {
   is_enabled              = true
   key_usage               = "ENCRYPT_DECRYPT"
   multi_region            = false
-
-  # ✅ Let module build policy
-  enable_default_policy = true
 
   # ✅ Access model
   key_owners = [
@@ -321,38 +322,42 @@ module "kms_key" {
   ]
 
   # ✅ S3 service access (logs + state buckets)
-  key_statements = [
-    {
-      sid = "AllowS3Usage"
-      actions = [
-        "kms:Encrypt",
-        "kms:Decrypt",
-        "kms:GenerateDataKey*",
-        "kms:DescribeKey"
-      ]
-      resources = ["*"]
-
-      principals = [
-        {
-          type        = "Service"
-          identifiers = ["s3.amazonaws.com"]
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "Enable IAM User Permissions"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:${local.partition}:iam::${local.account_id}:root"
         }
-      ]
-
-      condition = [
-        {
-          test     = "StringEquals"
-          variable = "aws:SourceAccount"
-          values   = [local.account_id]
-        },
-        {
-          test     = "StringLike"
-          variable = "kms:ViaService"
-          values   = ["s3.${var.aws_region}.amazonaws.com"]
+        Action   = "kms:*"
+        Resource = "*"
+      },
+      {
+        Sid    = "Allow S3 to use the key"
+        Effect = "Allow"
+        Principal = {
+          Service = "s3.amazonaws.com"
         }
-      ]
-    }
-  ]
+        Action = [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
+        ]
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "aws:SourceAccount" = local.account_id
+          }
+          StringLike = {
+            "kms:ViaService" = "s3.${var.aws_region}.amazonaws.com"
+          }
+        }
+      }
+    ]
+  })
 
   # ✅ Alias (consistent naming)
   aliases = [
@@ -367,10 +372,10 @@ module "kms_key" {
 ############################################
 
 module "state_bucket" {
-  source = "git::https://github.com/BT-IT-Infrastructure-CloudOps/aws-terraform-module-s3-bucket.git?ref=bde2672469f96c4a6907ee9c36ba540d7c77047b"
+  source  = "terraform-aws-modules/s3-bucket/aws"
+  version = "~> 4.0"
 
-  count = 1
-
+  count  = 1
   bucket = local.tfstate_bucket_name
 
   versioning = {
@@ -403,6 +408,8 @@ module "state_bucket" {
   restrict_public_buckets = true
 
   force_destroy = false
+
+  tags = local.tags
 }
 
 ############################################
@@ -410,10 +417,10 @@ module "state_bucket" {
 ############################################
 
 module "logs_bucket" {
-  source = "git::https://github.com/BT-IT-Infrastructure-CloudOps/aws-terraform-module-s3-bucket.git?ref=bde2672469f96c4a6907ee9c36ba540d7c77047b"
+  source  = "terraform-aws-modules/s3-bucket/aws"
+  version = "~> 4.0"
 
-  count = 1
-
+  count  = 1
   bucket = local.logs_bucket_name
 
   versioning = {
@@ -446,6 +453,8 @@ module "logs_bucket" {
   restrict_public_buckets = true
 
   force_destroy = false
+
+  tags = local.tags
 }
 
 ############################################
