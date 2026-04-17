@@ -81,7 +81,7 @@ craighoad_parent_ou_id   = "ou-9c67-t2p4n6m8" # workloads_prod_ou
 
 # Get your SSO principal ID from AWS Identity Center > Users or Groups > copy the ID
 # This is your user or group ID in AWS SSO that will be assigned admin access to new accounts
-sso_principal_id   = "00000000-0000-0000-0000-000000000000"  # CHANGE THIS: Your AWS SSO user/group ID
+sso_principal_id   = "a6129234-b091-705d-1be2-22095cb59a09"
 sso_principal_type = "USER"
 
 ############################################
